@@ -33,15 +33,17 @@ const productSchema = new Schema({
 });
 
 // DO NOT MESS BELOW
-const virtual  = productSchema.virtual('id');
-virtual.get(function(){
-    return this._id;
-})
-productSchema.set('toJSON',{
-    virtuals: true,
-    versionKey: false,
-    transform: function (doc,ret) { delete ret._id}
-})
+const virtual = productSchema.virtual("id");
+virtual.get(function () {
+  return this._id;
+});
+productSchema.set("toJSON", {
+  virtuals: true,
+  versionKey: false,
+  transform: function (doc, ret) {
+    delete ret._id;
+  },
+});
 // DO NOT MESS ABOVE
 
 exports.Product = mongoose.model("Product", productSchema);
