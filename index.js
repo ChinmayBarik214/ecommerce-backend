@@ -57,10 +57,9 @@ passport.use(
         "sha256",
         async function (err, hashedPassword) {
           if (!crypto.timingSafeEqual(user.password, hashedPassword)) {
-            done(null, user); // this line sends to serializer
-          } else {
-            done(null, false, { message: "invalid credentials" });
+            return done(null, false, { message: "invalid credentials" });
           }
+          done(null, user); // this line sends to serializer
         }
       );
     } catch (err) {
@@ -71,16 +70,18 @@ passport.use(
 
 // this creates session variable req.user on being called from callbacks
 passport.serializeUser(function (user, cb) {
-  console.log("serialize", user);
   process.nextTick(function () {
-    return cb(null, user);
+    console.log("serialize", user)
+    return cb(null, { id: user.id, role: user.role });
   });
 });
+
 // this changes session variable req.user when called from authorized request
+
 passport.deserializeUser(function (user, cb) {
-  console.log("de-serialize", user);
   process.nextTick(function () {
-    return cb(null, { id: user.id, role: user.role });
+    console.log("de-serialize", user)
+    return cb(null, user);
   });
 });
 
