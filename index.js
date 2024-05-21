@@ -16,6 +16,7 @@ const authRouter = require("./routes/Auth");
 const cartRouter = require("./routes/Cart");
 const ordersRouter = require("./routes/Order");
 const { User } = require("./model/User");
+const { isAuth, sanitizeUser } = require("./services/common");
 // middlewares
 server.use(
   session({
@@ -59,7 +60,7 @@ passport.use(
           if (!crypto.timingSafeEqual(user.password, hashedPassword)) {
             return done(null, false, { message: "invalid credentials" });
           }
-          done(null, user); // this line sends to serializer
+          done(null, sanitizeUser(user)); // this line sends to serializer
         }
       );
     } catch (err) {
@@ -91,17 +92,7 @@ async function main() {
   console.log("database connected");
 }
 
-server.get("/", (req, res) => {
-  res.json({ status: "success" });
-});
 
-function isAuth(req, res, done) {
-  if (req.user) {
-    done();
-  } else {
-    res.send(401);
-  }
-}
 
 server.listen(8080, () => {
   console.log("server started");
