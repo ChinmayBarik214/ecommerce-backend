@@ -6,6 +6,9 @@ const session = require("express-session");
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
 const crypto = require("crypto");
+const JwtStrategy = require("passport-jwt").Strategy;
+const ExtractJwt = require("passport-jwt").ExtractJwt;
+const jwt = require("jsonwebtoken");
 
 const { createProduct } = require("./controller/Product");
 const productsRouter = require("./routes/Products");
@@ -17,6 +20,15 @@ const cartRouter = require("./routes/Cart");
 const ordersRouter = require("./routes/Order");
 const { User } = require("./model/User");
 const { isAuth, sanitizeUser } = require("./services/common");
+
+const SECRET_KEY = "SECRET_KEY";
+// JWT options
+const opts = {};
+opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
+opts.secretOrKey =  SECRET_KEY; // TODO : should not be in code;
+opts.issuer = "accounts.examplesoft.com";
+opts.audience = "yoursite.net";
+
 // middlewares
 server.use(
   session({
@@ -33,7 +45,8 @@ server.use(
   })
 );
 server.use(express.json()); // to parse req.body
-server.use("/products", isAuth, productsRouter.router); // we can also use JWT token
+server.use("/products", isAuth, productsRouter.router);
+// we can also use JWT token for client-only auth
 server.use("/categories", categoriesRouter.router);
 server.use("/brands", brandsRouter.router);
 server.use("/users", usersRouter.router);
@@ -43,6 +56,7 @@ server.use("/orders", ordersRouter.router);
 
 // passport strategies
 passport.use(
+  "local",
   new LocalStrategy(async function (username, password, done) {
     // by default passport uses username
     try {
@@ -60,7 +74,8 @@ passport.use(
           if (!crypto.timingSafeEqual(user.password, hashedPassword)) {
             return done(null, false, { message: "invalid credentials" });
           }
-          done(null, sanitizeUser(user)); // this line sends to serializer
+          const token = jwt.sign(sanitizeUser(user), SECRET_KEY);
+          done(null, token); // this line sends to serializer
         }
       );
     } catch (err) {
@@ -69,10 +84,26 @@ passport.use(
   })
 );
 
+passport.use(
+  "jwt",
+  new JwtStrategy(opts, function (jwt_payload, done) {
+    console.log({ jwt_payload });
+    User.findOne({ id: jwt_payload.sub }, function (err, user) {
+      if (err) {
+        return done(err, false);
+      }
+      if (user) {
+        return done(null, user);
+      } else {
+        return done(null, false);
+      }
+    });
+  })
+);
 // this creates session variable req.user on being called from callbacks
 passport.serializeUser(function (user, cb) {
   process.nextTick(function () {
-    console.log("serialize", user)
+    console.log("serialize", user);
     return cb(null, { id: user.id, role: user.role });
   });
 });
@@ -81,7 +112,7 @@ passport.serializeUser(function (user, cb) {
 
 passport.deserializeUser(function (user, cb) {
   process.nextTick(function () {
-    console.log("de-serialize", user)
+    console.log("de-serialize", user);
     return cb(null, user);
   });
 });
@@ -91,8 +122,6 @@ async function main() {
   await mongoose.connect("mongodb://127.0.0.1:27017/ecommerce");
   console.log("database connected");
 }
-
-
 
 server.listen(8080, () => {
   console.log("server started");
