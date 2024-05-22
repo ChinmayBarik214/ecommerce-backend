@@ -6,10 +6,9 @@ const session = require("express-session");
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
 const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
 const JwtStrategy = require("passport-jwt").Strategy;
 const ExtractJwt = require("passport-jwt").ExtractJwt;
-const jwt = require("jsonwebtoken");
-
 const { createProduct } = require("./controller/Product");
 const productsRouter = require("./routes/Products");
 const categoriesRouter = require("./routes/Categories");
@@ -25,11 +24,10 @@ const SECRET_KEY = "SECRET_KEY";
 // JWT options
 const opts = {};
 opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
-opts.secretOrKey = SECRET_KEY; // TODO : should not be in code;
-opts.issuer = "accounts.examplesoft.com";
-opts.audience = "yoursite.net";
+opts.secretOrKey = SECRET_KEY; // TODO: should not be in code;
 
-// middlewares
+//middlewares
+
 server.use(
   session({
     secret: "keyboard cat",
@@ -38,31 +36,31 @@ server.use(
   })
 );
 server.use(passport.authenticate("session"));
-
 server.use(
   cors({
     exposedHeaders: ["X-Total-Count"],
   })
 );
 server.use(express.json()); // to parse req.body
-server.use("/products", isAuth, productsRouter.router);
+server.use("/products", isAuth(), productsRouter.router);
 // we can also use JWT token for client-only auth
-server.use("/categories", categoriesRouter.router);
-server.use("/brands", brandsRouter.router);
-server.use("/users", usersRouter.router);
+server.use("/categories", isAuth(), categoriesRouter.router);
+server.use("/brands", isAuth(), brandsRouter.router);
+server.use("/users", isAuth(), usersRouter.router);
 server.use("/auth", authRouter.router);
-server.use("/cart", cartRouter.router);
-server.use("/orders", ordersRouter.router);
+server.use("/cart", isAuth(), cartRouter.router);
+server.use("/orders", isAuth(), ordersRouter.router);
 
-// passport strategies
+// Passport Strategies
 passport.use(
   "local",
   new LocalStrategy(async function (username, password, done) {
     // by default passport uses username
     try {
-      const user = await User.findOne({ email: username }).exec();
+      const user = await User.findOne({ email: username });
+      console.log(username, password, user);
       if (!user) {
-        done(null, false, { message: "invalid credentials" }); // for safety
+        return done(null, false, { message: "invalid credentials" }); // for safety
       }
       crypto.pbkdf2(
         password,
@@ -75,7 +73,7 @@ passport.use(
             return done(null, false, { message: "invalid credentials" });
           }
           const token = jwt.sign(sanitizeUser(user), SECRET_KEY);
-          done(null, token); // this line sends to serializer
+          done(null, token); // this lines sends to serializer
         }
       );
     } catch (err) {
@@ -100,10 +98,11 @@ passport.use(
     }
   })
 );
+
 // this creates session variable req.user on being called from callbacks
 passport.serializeUser(function (user, cb) {
+  console.log("serialize", user);
   process.nextTick(function () {
-    console.log("serialize", user);
     return cb(null, { id: user.id, role: user.role });
   });
 });
@@ -111,13 +110,14 @@ passport.serializeUser(function (user, cb) {
 // this changes session variable req.user when called from authorized request
 
 passport.deserializeUser(function (user, cb) {
+  console.log("de-serialize", user);
   process.nextTick(function () {
-    console.log("de-serialize", user);
     return cb(null, user);
   });
 });
 
 main().catch((err) => console.log(err));
+
 async function main() {
   await mongoose.connect("mongodb://127.0.0.1:27017/ecommerce");
   console.log("database connected");
