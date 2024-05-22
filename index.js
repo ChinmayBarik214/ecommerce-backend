@@ -25,7 +25,7 @@ const SECRET_KEY = "SECRET_KEY";
 // JWT options
 const opts = {};
 opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
-opts.secretOrKey =  SECRET_KEY; // TODO : should not be in code;
+opts.secretOrKey = SECRET_KEY; // TODO : should not be in code;
 opts.issuer = "accounts.examplesoft.com";
 opts.audience = "yoursite.net";
 
@@ -86,18 +86,18 @@ passport.use(
 
 passport.use(
   "jwt",
-  new JwtStrategy(opts, function (jwt_payload, done) {
+  new JwtStrategy(opts, async function (jwt_payload, done) {
     console.log({ jwt_payload });
-    User.findOne({ id: jwt_payload.sub }, function (err, user) {
-      if (err) {
-        return done(err, false);
-      }
+    try {
+      const user = await User.findOne({ id: jwt_payload.sub });
       if (user) {
-        return done(null, user);
+        return done(null, sanitizeUser(user)); // this calls serializer
       } else {
         return done(null, false);
       }
-    });
+    } catch (err) {
+      return done(err, false);
+    }
   })
 );
 // this creates session variable req.user on being called from callbacks

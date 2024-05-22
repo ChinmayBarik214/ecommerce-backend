@@ -37,5 +37,5 @@ exports.loginUser = async (req, res) => {
 };
 
 exports.checkUser = async (req, res) => {
-  res.json(req.user);
+  res.json({status: "success", user: req.user});
 };
