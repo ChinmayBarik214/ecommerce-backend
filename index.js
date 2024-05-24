@@ -22,19 +22,20 @@ const ordersRouter = require("./routes/Order");
 const { User } = require("./model/User");
 const { isAuth, sanitizeUser, cookieExtractor } = require("./services/common");
 const path = require("path");
+const { Order } = require("./model/Order");
 
 console.log(process.env);
 
 // Webhook
 
-// TODO: We will capture actual order after deploying out server live on public URL
+// TODO: we will capture actual order after deploying out server live on public URL
 
 const endpointSecret = process.env.ENDPOINT_SECRET;
 
 server.post(
   "/webhook",
   express.raw({ type: "application/json" }),
-  (request, response) => {
+  async (request, response) => {
     const sig = request.headers["stripe-signature"];
 
     let event;
@@ -50,8 +51,13 @@ server.post(
     switch (event.type) {
       case "payment_intent.succeeded":
         const paymentIntentSucceeded = event.data.object;
-        console.log({ paymentIntentSucceeded });
-        // Then define and call a function to handle the event payment_intent.succeeded
+
+        const order = await Order.findById(
+          paymentIntentSucceeded.metadata.orderId
+        );
+        order.paymentStatus = "received";
+        await order.save();
+
         break;
       // ... handle other event types
       default:
@@ -62,6 +68,7 @@ server.post(
     response.send();
   }
 );
+
 // JWT options
 
 const opts = {};
@@ -86,6 +93,7 @@ server.use(
   })
 );
 server.use(express.json()); // to parse req.body
+
 server.use("/products", isAuth(), productsRouter.router);
 // we can also use JWT token for client-only auth
 server.use("/categories", isAuth(), categoriesRouter.router);
@@ -94,6 +102,10 @@ server.use("/users", isAuth(), usersRouter.router);
 server.use("/auth", authRouter.router);
 server.use("/cart", isAuth(), cartRouter.router);
 server.use("/orders", isAuth(), ordersRouter.router);
+// this line we add to make react router work in case of other routes doesnt match
+server.get("*", (req, res) =>
+  res.sendFile(path.resolve("build", "index.html"))
+);
 
 // Passport Strategies
 passport.use(
@@ -104,6 +116,7 @@ passport.use(
     done
   ) {
     // by default passport uses username
+    console.log({ email, password });
     try {
       const user = await User.findOne({ email: email });
       console.log(email, password, user);
@@ -168,19 +181,22 @@ passport.deserializeUser(function (user, cb) {
 });
 
 // Payments
+
 // This is your test secret API key.
 const stripe = require("stripe")(process.env.STRIPE_SERVER_KEY);
 
 server.post("/create-payment-intent", async (req, res) => {
-  const { totalAmount } = req.body;
+  const { totalAmount, orderId } = req.body;
 
   // Create a PaymentIntent with the order amount and currency
   const paymentIntent = await stripe.paymentIntents.create({
     amount: totalAmount * 100, // for decimal compensation
     currency: "inr",
-    // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
     automatic_payment_methods: {
       enabled: true,
+    },
+    metadata: {
+      orderId,
     },
   });
 

@@ -8,11 +8,11 @@ const orderSchema = new Schema({
   user: { type: Schema.Types.ObjectId, ref: "User", required: true },
   //TODO:  we can add enum types
   paymentMethod: { type: String, required: true },
+  paymentStatus: { type: String, default: "pending" },
   status: { type: String, default: "pending" },
   selectedAddress: { type: Schema.Types.Mixed, required: true },
 });
 
-// DO NOT MESS BELOW
 const virtual = orderSchema.virtual("id");
 virtual.get(function () {
   return this._id;
@@ -24,6 +24,5 @@ orderSchema.set("toJSON", {
     delete ret._id;
   },
 });
-// DO NOT MESS ABOVE
 
 exports.Order = mongoose.model("Order", orderSchema);

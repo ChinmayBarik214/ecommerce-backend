@@ -7,11 +7,11 @@ const {
 } = require("../controller/Product");
 
 const router = express.Router();
-// /products is already added in base path
+//  /products is already added in base path
 router
   .post("/", createProduct)
   .get("/", fetchAllProducts)
   .get("/:id", fetchProductById)
-  .patch('/:id', updateProduct)
+  .patch("/:id", updateProduct);
 
 exports.router = router;

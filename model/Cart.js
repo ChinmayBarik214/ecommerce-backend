@@ -7,7 +7,6 @@ const cartSchema = new Schema({
   user: { type: Schema.Types.ObjectId, ref: "User", required: true },
 });
 
-// DO NOT MESS BELOW
 const virtual = cartSchema.virtual("id");
 virtual.get(function () {
   return this._id;
@@ -19,6 +18,5 @@ cartSchema.set("toJSON", {
     delete ret._id;
   },
 });
-// DO NOT MESS ABOVE
 
 exports.Cart = mongoose.model("Cart", cartSchema);

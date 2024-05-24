@@ -6,7 +6,6 @@ const brandSchema = new Schema({
   value: { type: String, required: true, unique: true },
 });
 
-// DO NOT MESS BELOW
 const virtual = brandSchema.virtual("id");
 virtual.get(function () {
   return this._id;
@@ -18,6 +17,5 @@ brandSchema.set("toJSON", {
     delete ret._id;
   },
 });
-// DO NOT MESS ABOVE
 
 exports.Brand = mongoose.model("Brand", brandSchema);

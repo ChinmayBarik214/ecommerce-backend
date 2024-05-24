@@ -1,6 +1,7 @@
 {
   "name": "ecommerce-backend",
   "version": "1.0.0",
+  "description": "",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -9,7 +10,6 @@
   },
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "connect-sqlite": "^0.0.1",
     "connect-sqlite3": "^0.9.13",

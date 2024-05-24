@@ -13,7 +13,7 @@ exports.cookieExtractor = function (req) {
   if (req && req.cookies) {
     token = req.cookies["jwt"];
   }
-  // TODO : this is temporary token for testing without cookie
+  //TODO : this is temporary token for testing without cookie
   // token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2NGYyNjJmMmEwYjMwZTE3MjIwZTZiOCIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzE2NDYzMTUyfQ.TgwIPBvfKOhbQ8K8Jyrg5vLuFK-tfewk5Mg4rwvIlLc";
   return token;
 };

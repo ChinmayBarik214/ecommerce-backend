@@ -6,7 +6,6 @@ const categorySchema = new Schema({
   value: { type: String, required: true, unique: true },
 });
 
-// DO NOT MESS BELOW
 const virtual = categorySchema.virtual("id");
 virtual.get(function () {
   return this._id;
@@ -18,6 +17,5 @@ categorySchema.set("toJSON", {
     delete ret._id;
   },
 });
-// DO NOT MESS ABOVE
 
 exports.Category = mongoose.model("Category", categorySchema);

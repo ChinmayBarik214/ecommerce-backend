@@ -6,18 +6,16 @@ exports.createProduct = async (req, res) => {
   try {
     const doc = await product.save();
     res.status(201).json(doc);
-  } catch {
+  } catch (err) {
     res.status(400).json(err);
   }
 };
 
 exports.fetchAllProducts = async (req, res) => {
-  // here we need all query string
-
   // filter = {"category":["smartphone","laptops"]}
   // sort = {_sort:"price",_order="desc"}
   // pagination = {_page:1,_limit=10}
-  // // TODO : we have to try with multiple category and brands after change in front-end
+  // TODO : we have to try with multiple category and brands after change in front-end
   let condition = {};
   if (!req.query.admin) {
     condition.deleted = { $ne: true };
@@ -25,7 +23,7 @@ exports.fetchAllProducts = async (req, res) => {
 
   let query = Product.find(condition);
   let totalProductsQuery = Product.find(condition);
-  
+
   if (req.query.category) {
     query = query.find({ category: req.query.category });
     totalProductsQuery = totalProductsQuery.find({
@@ -36,7 +34,7 @@ exports.fetchAllProducts = async (req, res) => {
     query = query.find({ brand: req.query.brand });
     totalProductsQuery = totalProductsQuery.find({ brand: req.query.brand });
   }
-  // TODO : How to get sort on discounted price not on actual price
+  //TODO : How to get sort on discounted Price not on Actual price
   if (req.query._sort && req.query._order) {
     query = query.sort({ [req.query._sort]: req.query._order });
   }
@@ -49,6 +47,7 @@ exports.fetchAllProducts = async (req, res) => {
     const page = req.query._page;
     query = query.skip(pageSize * (page - 1)).limit(pageSize);
   }
+
   try {
     const docs = await query.exec();
     res.set("X-Total-Count", totalDocs);
@@ -64,7 +63,7 @@ exports.fetchProductById = async (req, res) => {
   try {
     const product = await Product.findById(id);
     res.status(200).json(product);
-  } catch {
+  } catch (err) {
     res.status(400).json(err);
   }
 };
@@ -76,7 +75,7 @@ exports.updateProduct = async (req, res) => {
       new: true,
     });
     res.status(200).json(product);
-  } catch {
+  } catch (err) {
     res.status(400).json(err);
   }
 };
